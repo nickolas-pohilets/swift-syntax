@@ -776,7 +776,7 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
     if shouldSkip(node) {
       return .skipChildren
     }
-    if let unexpected = node.unexpectedBetweenDeinitKeywordAndBody,
+    if let unexpected = node.unexpectedBetweenDeinitKeywordAndAsyncKeyword,
       let name = unexpected.presentTokens(satisfying: { $0.tokenKind.isIdentifier == true }).only?.as(TokenSyntax.self)
     {
       addDiagnostic(
@@ -788,17 +788,29 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
         handledNodes: [name.id]
       )
     }
-    if let unexpected = node.unexpectedBetweenDeinitKeywordAndBody,
-      let signature = unexpected.compactMap({ $0.as(FunctionSignatureSyntax.self) }).only
+    if let unexpected = node.unexpectedBetweenDeinitKeywordAndAsyncKeyword,
+      let params = unexpected.compactMap({ $0.as(ParameterClauseSyntax.self) }).only
     {
       addDiagnostic(
-        signature,
+        params,
         .deinitCannotHaveParameters,
         fixIts: [
-          FixIt(message: RemoveNodesFixIt(signature), changes: .makeMissing(signature))
+          FixIt(message: RemoveNodesFixIt(params), changes: .makeMissing(params))
         ],
-        handledNodes: [signature.id]
+        handledNodes: [params.id]
       )
+    }
+      
+    if let unexpected = node.unexpectedBetweenDeinitKeywordAndAsyncKeyword,
+       let throwsKeyword = unexpected.filter({ [.throwKeyword, .rethrowsKeyword].contains($0.as(TokenSyntax.self)?.tokenKind) }).only {
+        addDiagnostic(
+            throwsKeyword,
+            .deinitCannotThrow,
+            fixIts: [
+                FixIt(message: RemoveNodesFixIt(throwsKeyword), changes: .makeMissing(throwsKeyword))
+            ],
+            handledNodes: [throwsKeyword.id]
+        )
     }
 
     return .visitChildren

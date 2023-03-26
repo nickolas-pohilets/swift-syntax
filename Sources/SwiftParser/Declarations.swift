@@ -1120,10 +1120,21 @@ extension Parser {
     _ handle: RecoveryConsumptionHandle
   ) -> RawDeinitializerDeclSyntax {
     let (unexpectedBeforeDeinitKeyword, deinitKeyword) = self.eat(handle)
+    var async: RawTokenSyntax? = self.consumeIfContextualKeyword("async")
+          
     var unexpectedNameAndSignature: [RawSyntax?] = []
+    var unexpectedAfterAsync: [RawSyntax?] = []
     unexpectedNameAndSignature.append(self.consume(if: TokenSpec(.identifier, allowAtStartOfLine: false)).map(RawSyntax.init))
-    if self.at(.leftParen) && !self.currentToken.isAtStartOfLine {
-      unexpectedNameAndSignature.append(RawSyntax(parseFunctionSignature()))
+    if self.at(.leftParen) && !self.currentToken.isAtStartOfLine && async == nil {
+      let sig = parseFunctionSignature()
+      unexpectedNameAndSignature.append(RawSyntax(sig.input))
+      async = sig.asyncOrReasyncKeyword
+      if let throwsKeyword = sig.throwsOrRethrowsKeyword {
+          unexpectedAfterAsync.append(RawSyntax(throwsKeyword))
+      }
+      if let output = sig.output {
+          unexpectedAfterAsync.append(RawSyntax(output))
+      }
     }
     let items = self.parseOptionalCodeBlock()
     return RawDeinitializerDeclSyntax(
@@ -1132,6 +1143,8 @@ extension Parser {
       unexpectedBeforeDeinitKeyword,
       deinitKeyword: deinitKeyword,
       RawUnexpectedNodesSyntax(unexpectedNameAndSignature, arena: self.arena),
+      asyncKeyword: async,
+      RawUnexpectedNodesSyntax(unexpectedAfterAsync, arena: self.arena),
       body: items,
       arena: self.arena
     )

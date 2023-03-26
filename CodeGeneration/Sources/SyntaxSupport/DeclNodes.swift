@@ -586,6 +586,11 @@ public let DECL_NODES: [Node] = [
         documentation: "The deinit keyword."
       ),
       Child(
+        name: "AsyncKeyword",
+        kind: .token(choices: [.keyword(text: "async")]),
+        isOptional: true
+      ),
+      Child(
         name: "Body",
         kind: .node(kind: .codeBlock),
         documentation: "The deinitializer's body.",

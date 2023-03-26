@@ -356,7 +356,9 @@ extension DeinitializerDeclSyntax {
       modifiers: ModifierListSyntax? = nil, 
       unexpectedBetweenModifiersAndDeinitKeyword: UnexpectedNodesSyntax? = nil, 
       deinitKeyword: TokenSyntax = .keyword(.deinit), 
-      unexpectedBetweenDeinitKeywordAndBody: UnexpectedNodesSyntax? = nil, 
+      unexpectedBetweenDeinitKeywordAndAsyncKeyword: UnexpectedNodesSyntax? = nil, 
+      asyncKeyword: TokenSyntax? = nil, 
+      unexpectedBetweenAsyncKeywordAndBody: UnexpectedNodesSyntax? = nil, 
       unexpectedAfterBody: UnexpectedNodesSyntax? = nil, 
       @CodeBlockItemListBuilder bodyBuilder: () throws -> CodeBlockItemListSyntax?, 
       trailingTrivia: Trivia? = nil
@@ -369,7 +371,9 @@ extension DeinitializerDeclSyntax {
         modifiers: modifiers, 
         unexpectedBetweenModifiersAndDeinitKeyword, 
         deinitKeyword: deinitKeyword, 
-        unexpectedBetweenDeinitKeywordAndBody, 
+        unexpectedBetweenDeinitKeywordAndAsyncKeyword, 
+        asyncKeyword: asyncKeyword, 
+        unexpectedBetweenAsyncKeywordAndBody, 
         body: bodyBuilder().map {
           CodeBlockSyntax(statements: $0)
         }, 

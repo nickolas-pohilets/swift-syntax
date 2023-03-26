@@ -909,8 +909,12 @@ public func childName(_ keyPath: AnyKeyPath) -> String? {
     return "unexpectedBetweenModifiersAndDeinitKeyword"
   case \DeinitializerDeclSyntax.deinitKeyword:
     return "deinitKeyword"
-  case \DeinitializerDeclSyntax.unexpectedBetweenDeinitKeywordAndBody:
-    return "unexpectedBetweenDeinitKeywordAndBody"
+  case \DeinitializerDeclSyntax.unexpectedBetweenDeinitKeywordAndAsyncKeyword:
+    return "unexpectedBetweenDeinitKeywordAndAsyncKeyword"
+  case \DeinitializerDeclSyntax.asyncKeyword:
+    return "asyncKeyword"
+  case \DeinitializerDeclSyntax.unexpectedBetweenAsyncKeywordAndBody:
+    return "unexpectedBetweenAsyncKeywordAndBody"
   case \DeinitializerDeclSyntax.body:
     return "body"
   case \DeinitializerDeclSyntax.unexpectedAfterBody:

@@ -6256,13 +6256,15 @@ public struct RawDeinitializerDeclSyntax: RawDeclSyntaxNodeProtocol {
       modifiers: RawModifierListSyntax?, 
       _ unexpectedBetweenModifiersAndDeinitKeyword: RawUnexpectedNodesSyntax? = nil, 
       deinitKeyword: RawTokenSyntax, 
-      _ unexpectedBetweenDeinitKeywordAndBody: RawUnexpectedNodesSyntax? = nil, 
+      _ unexpectedBetweenDeinitKeywordAndAsyncKeyword: RawUnexpectedNodesSyntax? = nil, 
+      asyncKeyword: RawTokenSyntax?, 
+      _ unexpectedBetweenAsyncKeywordAndBody: RawUnexpectedNodesSyntax? = nil, 
       body: RawCodeBlockSyntax?, 
       _ unexpectedAfterBody: RawUnexpectedNodesSyntax? = nil, 
       arena: __shared SyntaxArena
     ) {
     let raw = RawSyntax.makeLayout(
-      kind: .deinitializerDecl, uninitializedCount: 9, arena: arena) { layout in
+      kind: .deinitializerDecl, uninitializedCount: 11, arena: arena) { layout in
       layout.initialize(repeating: nil)
       layout[0] = unexpectedBeforeAttributes?.raw
       layout[1] = attributes?.raw
@@ -6270,9 +6272,11 @@ public struct RawDeinitializerDeclSyntax: RawDeclSyntaxNodeProtocol {
       layout[3] = modifiers?.raw
       layout[4] = unexpectedBetweenModifiersAndDeinitKeyword?.raw
       layout[5] = deinitKeyword.raw
-      layout[6] = unexpectedBetweenDeinitKeywordAndBody?.raw
-      layout[7] = body?.raw
-      layout[8] = unexpectedAfterBody?.raw
+      layout[6] = unexpectedBetweenDeinitKeywordAndAsyncKeyword?.raw
+      layout[7] = asyncKeyword?.raw
+      layout[8] = unexpectedBetweenAsyncKeywordAndBody?.raw
+      layout[9] = body?.raw
+      layout[10] = unexpectedAfterBody?.raw
     }
     self.init(unchecked: raw)
   }
@@ -6301,16 +6305,24 @@ public struct RawDeinitializerDeclSyntax: RawDeclSyntaxNodeProtocol {
     layoutView.children[5].map(RawTokenSyntax.init(raw:))!
   }
   
-  public var unexpectedBetweenDeinitKeywordAndBody: RawUnexpectedNodesSyntax? {
+  public var unexpectedBetweenDeinitKeywordAndAsyncKeyword: RawUnexpectedNodesSyntax? {
     layoutView.children[6].map(RawUnexpectedNodesSyntax.init(raw:))
   }
   
+  public var asyncKeyword: RawTokenSyntax? {
+    layoutView.children[7].map(RawTokenSyntax.init(raw:))
+  }
+  
+  public var unexpectedBetweenAsyncKeywordAndBody: RawUnexpectedNodesSyntax? {
+    layoutView.children[8].map(RawUnexpectedNodesSyntax.init(raw:))
+  }
+  
   public var body: RawCodeBlockSyntax? {
-    layoutView.children[7].map(RawCodeBlockSyntax.init(raw:))
+    layoutView.children[9].map(RawCodeBlockSyntax.init(raw:))
   }
   
   public var unexpectedAfterBody: RawUnexpectedNodesSyntax? {
-    layoutView.children[8].map(RawUnexpectedNodesSyntax.init(raw:))
+    layoutView.children[10].map(RawUnexpectedNodesSyntax.init(raw:))
   }
 }
 

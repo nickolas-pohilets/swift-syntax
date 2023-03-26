@@ -1272,7 +1272,9 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
       modifiers: ModifierListSyntax? = nil,
       _ unexpectedBetweenModifiersAndDeinitKeyword: UnexpectedNodesSyntax? = nil,
       deinitKeyword: TokenSyntax = .keyword(.deinit),
-      _ unexpectedBetweenDeinitKeywordAndBody: UnexpectedNodesSyntax? = nil,
+      _ unexpectedBetweenDeinitKeywordAndAsyncKeyword: UnexpectedNodesSyntax? = nil,
+      asyncKeyword: TokenSyntax? = nil,
+      _ unexpectedBetweenAsyncKeywordAndBody: UnexpectedNodesSyntax? = nil,
       body: CodeBlockSyntax? = nil,
       _ unexpectedAfterBody: UnexpectedNodesSyntax? = nil,
       trailingTrivia: Trivia? = nil
@@ -1287,7 +1289,9 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
             modifiers, 
             unexpectedBetweenModifiersAndDeinitKeyword, 
             deinitKeyword, 
-            unexpectedBetweenDeinitKeywordAndBody, 
+            unexpectedBetweenDeinitKeywordAndAsyncKeyword, 
+            asyncKeyword, 
+            unexpectedBetweenAsyncKeywordAndBody, 
             body, 
             unexpectedAfterBody
           ))) {(arena, _) in
@@ -1298,7 +1302,9 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
           modifiers?.raw, 
           unexpectedBetweenModifiersAndDeinitKeyword?.raw, 
           deinitKeyword.raw, 
-          unexpectedBetweenDeinitKeywordAndBody?.raw, 
+          unexpectedBetweenDeinitKeywordAndAsyncKeyword?.raw, 
+          asyncKeyword?.raw, 
+          unexpectedBetweenAsyncKeywordAndBody?.raw, 
           body?.raw, 
           unexpectedAfterBody?.raw
         ]
@@ -1410,7 +1416,7 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
     }
   }
   
-  public var unexpectedBetweenDeinitKeywordAndBody: UnexpectedNodesSyntax? {
+  public var unexpectedBetweenDeinitKeywordAndAsyncKeyword: UnexpectedNodesSyntax? {
     get {
       return data.child(at: 6, parent: Syntax(self)).map(UnexpectedNodesSyntax.init)
     }
@@ -1419,22 +1425,40 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
     }
   }
   
-  /// The deinitializer's body.
-  public var body: CodeBlockSyntax? {
+  public var asyncKeyword: TokenSyntax? {
     get {
-      return data.child(at: 7, parent: Syntax(self)).map(CodeBlockSyntax.init)
+      return data.child(at: 7, parent: Syntax(self)).map(TokenSyntax.init)
     }
     set(value) {
       self = DeinitializerDeclSyntax(data.replacingChild(at: 7, with: value?.raw, arena: SyntaxArena()))
     }
   }
   
-  public var unexpectedAfterBody: UnexpectedNodesSyntax? {
+  public var unexpectedBetweenAsyncKeywordAndBody: UnexpectedNodesSyntax? {
     get {
       return data.child(at: 8, parent: Syntax(self)).map(UnexpectedNodesSyntax.init)
     }
     set(value) {
       self = DeinitializerDeclSyntax(data.replacingChild(at: 8, with: value?.raw, arena: SyntaxArena()))
+    }
+  }
+  
+  /// The deinitializer's body.
+  public var body: CodeBlockSyntax? {
+    get {
+      return data.child(at: 9, parent: Syntax(self)).map(CodeBlockSyntax.init)
+    }
+    set(value) {
+      self = DeinitializerDeclSyntax(data.replacingChild(at: 9, with: value?.raw, arena: SyntaxArena()))
+    }
+  }
+  
+  public var unexpectedAfterBody: UnexpectedNodesSyntax? {
+    get {
+      return data.child(at: 10, parent: Syntax(self)).map(UnexpectedNodesSyntax.init)
+    }
+    set(value) {
+      self = DeinitializerDeclSyntax(data.replacingChild(at: 10, with: value?.raw, arena: SyntaxArena()))
     }
   }
   
@@ -1446,7 +1470,9 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
           \Self.modifiers, 
           \Self.unexpectedBetweenModifiersAndDeinitKeyword, 
           \Self.deinitKeyword, 
-          \Self.unexpectedBetweenDeinitKeywordAndBody, 
+          \Self.unexpectedBetweenDeinitKeywordAndAsyncKeyword, 
+          \Self.asyncKeyword, 
+          \Self.unexpectedBetweenAsyncKeywordAndBody, 
           \Self.body, 
           \Self.unexpectedAfterBody
         ])
