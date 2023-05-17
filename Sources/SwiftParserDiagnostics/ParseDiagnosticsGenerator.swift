@@ -800,16 +800,29 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
         handledNodes: [params.id]
       )
     }
-      
-    if let unexpected = node.unexpectedBetweenDeinitKeywordAndAsyncKeyword,
-       let throwsKeyword = unexpected.filter({ [.throwKeyword, .rethrowsKeyword].contains($0.as(TokenSyntax.self)?.tokenKind) }).only {
+    
+    let throwsTokens: [TokenKind] = [
+      .keyword(.throws),
+      .keyword(.rethrows),
+      .keyword(.try),
+      .keyword(.throw),
+    ]
+    func asThrowingToken(_ syntax: Syntax) -> TokenSyntax? {
+      guard let token = syntax.as(TokenSyntax.self) else { return nil }
+      if token.isMissing { return nil }
+      if throwsTokens.contains(token.tokenKind) { return token }
+      return nil
+    }
+    
+    let unexpectedThrows = (node.unexpectedBetweenDeinitKeywordAndAsyncKeyword?.compactMap(asThrowingToken) ?? []) + (node.unexpectedBetweenAsyncKeywordAndBody?.compactMap(asThrowingToken) ?? [])
+    if let throwsKeyword = unexpectedThrows.first {
         addDiagnostic(
             throwsKeyword,
             .deinitCannotThrow,
             fixIts: [
-                FixIt(message: RemoveNodesFixIt(throwsKeyword), changes: .makeMissing(throwsKeyword))
+                FixIt(message: RemoveNodesFixIt(unexpectedThrows), changes: .makeMissing(unexpectedThrows))
             ],
-            handledNodes: [throwsKeyword.id]
+            handledNodes: unexpectedThrows.map(\.id)
         )
     }
 

@@ -149,7 +149,7 @@ final class InitDeinitTests: XCTestCase {
       """,
       diagnostics: [
         DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot have a name", fixIts: ["remove 'x'"]),
-        DiagnosticSpec(locationMarker: "2️⃣", message: "deinitializers cannot have parameters", fixIts: ["remove function signature"]),
+        DiagnosticSpec(locationMarker: "2️⃣", message: "deinitializers cannot have parameters", fixIts: ["remove parameter clause"]),
       ],
       fixedSource: """
         struct FooStructDeinitializerA {
@@ -187,7 +187,7 @@ final class InitDeinitTests: XCTestCase {
       }
       """,
       diagnostics: [
-        DiagnosticSpec(message: "deinitializers cannot have parameters", fixIts: ["remove function signature"])
+        DiagnosticSpec(message: "deinitializers cannot have parameters", fixIts: ["remove parameter clause"])
       ],
       fixedSource: """
         class FooClassDeinitializerA {
@@ -216,7 +216,7 @@ final class InitDeinitTests: XCTestCase {
       """,
       diagnostics: [
         DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot have a name", fixIts: ["remove 'x'"]),
-        DiagnosticSpec(locationMarker: "2️⃣", message: "deinitializers cannot have parameters", fixIts: ["remove function signature"]),
+        DiagnosticSpec(locationMarker: "2️⃣", message: "deinitializers cannot have parameters", fixIts: ["remove parameter clause"]),
       ],
       fixedSource: """
         class FooClassDeinitializerC {
@@ -436,6 +436,60 @@ final class InitDeinitTests: XCTestCase {
       }
       """,
       substructure: Syntax(DeinitializerDeclSyntax())
+    )
+  }
+    
+  func testDeinitAsyncThrows() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit async 1️⃣throws {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot throw", fixIts: ["remove 'throws'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+    
+  func testDeinitThrowsAsync() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣throws async {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot throw", fixIts: ["remove 'throws'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitThrowsAsyncRethrows() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣throws async rethrows {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot throw", fixIts: ["remove 'throws' and 'rethrows'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
     )
   }
 }

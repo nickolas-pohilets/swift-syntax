@@ -1120,18 +1120,69 @@ extension Parser {
     _ handle: RecoveryConsumptionHandle
   ) -> RawDeinitializerDeclSyntax {
     let (unexpectedBeforeDeinitKeyword, deinitKeyword) = self.eat(handle)
-    var async: RawTokenSyntax? = self.consumeIfContextualKeyword("async")
-          
-    var unexpectedNameAndSignature: [RawSyntax?] = []
+    var unexpectedBeforeAsync: [RawSyntax?] = []
+    var asyncKeyword: RawTokenSyntax?
     var unexpectedAfterAsync: [RawSyntax?] = []
-    unexpectedNameAndSignature.append(self.consume(if: TokenSpec(.identifier, allowAtStartOfLine: false)).map(RawSyntax.init))
-    if self.at(.leftParen) && !self.currentToken.isAtStartOfLine && async == nil {
-      let sig = parseFunctionSignature()
-      unexpectedNameAndSignature.append(RawSyntax(sig.input))
-      async = sig.asyncOrReasyncKeyword
-      if let throwsKeyword = sig.throwsOrRethrowsKeyword {
-          unexpectedAfterAsync.append(RawSyntax(throwsKeyword))
+    
+    // async is a contextual keyword
+    // must be parsed before attempting to parse identifier
+    while true {
+      var progressed: Bool = false
+      
+      if asyncKeyword?.isMissing ?? true {
+        if let realAsync = self.consume(if: .keyword(.async)) {
+          progressed = true
+          asyncKeyword = realAsync
+        }
       }
+      
+      while let badAsync = self.consume(ifAnyIn: MisspelledDeinitAsyncSpecifiers.self) {
+        progressed = true
+        if asyncKeyword?.isMissing ?? true {
+          unexpectedBeforeAsync.append(badAsync.raw)
+        } else {
+          unexpectedAfterAsync.append(badAsync.raw)
+        }
+        if asyncKeyword == nil {
+          // Let's synthesize a missing 'async'. If we find a real async specifier
+          // later, we will replace the missing token by the present token.
+          asyncKeyword = missingToken(.keyword(.async))
+        }
+      }
+      
+      while let badThrows = self.consume(ifAnyIn: MisspelledDeinitThrowsSpecifiers.self) {
+        progressed = true
+        if asyncKeyword?.isMissing ?? true {
+          unexpectedBeforeAsync.append(badThrows.raw)
+        } else {
+          unexpectedAfterAsync.append(badThrows.raw)
+        }
+      }
+      
+      if unexpectedBeforeAsync.isEmpty && unexpectedAfterAsync.isEmpty {
+        if let identifier = self.consume(if: TokenSpec(.identifier, allowAtStartOfLine: false)).map(RawSyntax.init) {
+          progressed = true
+          unexpectedBeforeAsync.append(identifier)
+        }
+      }
+        
+      if !progressed { break }
+    }
+    if self.at(.leftParen) && !self.currentToken.isAtStartOfLine {
+      let sig = parseFunctionSignature()
+      unexpectedBeforeAsync.append(contentsOf: sig.unexpectedBeforeInput?.elements ?? [])
+      unexpectedBeforeAsync.append(RawSyntax(sig.input))
+      unexpectedBeforeAsync.append(contentsOf: sig.unexpectedBetweenInputAndEffectSpecifiers?.elements ?? [])
+      if let effects = sig.effectSpecifiers {
+        unexpectedBeforeAsync.append(contentsOf: effects.unexpectedBeforeAsyncSpecifier?.elements ?? [])
+        asyncKeyword = sig.effectSpecifiers?.asyncSpecifier
+        unexpectedAfterAsync.append(contentsOf: effects.unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? [])
+        if let throwsKeyword = sig.effectSpecifiers?.throwsSpecifier {
+            unexpectedAfterAsync.append(RawSyntax(throwsKeyword))
+        }
+        unexpectedAfterAsync.append(contentsOf: effects.unexpectedAfterThrowsSpecifier?.elements ?? [])
+      }
+      unexpectedAfterAsync.append(contentsOf: sig.unexpectedBetweenEffectSpecifiersAndOutput?.elements ?? [])
       if let output = sig.output {
           unexpectedAfterAsync.append(RawSyntax(output))
       }
@@ -1142,12 +1193,58 @@ extension Parser {
       modifiers: attrs.modifiers,
       unexpectedBeforeDeinitKeyword,
       deinitKeyword: deinitKeyword,
-      RawUnexpectedNodesSyntax(unexpectedNameAndSignature, arena: self.arena),
-      asyncKeyword: async,
+      RawUnexpectedNodesSyntax(unexpectedBeforeAsync, arena: self.arena),
+      asyncKeyword: asyncKeyword,
       RawUnexpectedNodesSyntax(unexpectedAfterAsync, arena: self.arena),
       body: items,
       arena: self.arena
     )
+  }
+  
+  private enum MisspelledDeinitAsyncSpecifiers: TokenSpecSet {
+    case await
+    case reasync
+
+    init?(lexeme: Lexer.Lexeme) {
+      switch PrepareForKeywordMatch(lexeme) {
+      case TokenSpec(.await, allowAtStartOfLine: false): self = .await
+      case TokenSpec(.reasync): self = .reasync
+      default: return nil
+      }
+    }
+
+    var spec: TokenSpec {
+      switch self {
+      case .await: return TokenSpec(.await, allowAtStartOfLine: false)
+      case .reasync: return .keyword(.reasync)
+      }
+    }
+  }
+  
+  private enum MisspelledDeinitThrowsSpecifiers: TokenSpecSet {
+    case `try`
+    case `throw`
+    case `rethrows`
+    case `throws`
+
+    init?(lexeme: Lexer.Lexeme) {
+      switch PrepareForKeywordMatch(lexeme) {
+      case TokenSpec(.try, allowAtStartOfLine: false): self = .try
+      case TokenSpec(.throw, allowAtStartOfLine: false): self = .throw
+      case TokenSpec(.rethrows): self = .rethrows
+      case TokenSpec(.throws): self = .throws
+      default: return nil
+      }
+    }
+
+    var spec: TokenSpec {
+      switch self {
+      case .try: return TokenSpec(.try, allowAtStartOfLine: false)
+      case .throw: return TokenSpec(.throw, allowAtStartOfLine: false)
+      case .rethrows: return .keyword(.rethrows)
+      case .throws: return .keyword(.throws)
+      }
+    }
   }
 }
 
