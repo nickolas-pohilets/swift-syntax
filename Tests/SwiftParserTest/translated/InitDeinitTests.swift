@@ -492,4 +492,210 @@ final class InitDeinitTests: XCTestCase {
         """
     )
   }
+  
+  func testDeinitReasync() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣reasync {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "expected async specifier; did you mean 'async'?", fixIts: ["replace 'reasync' with 'async'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitAwait() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣await {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "expected async specifier; did you mean 'async'?", fixIts: ["replace 'await' with 'async'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitAsyncAwait() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit ℹ️async 1️⃣await {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(
+          locationMarker: "1️⃣",
+          message: "'await' conflicts with 'async'",
+          notes: [NoteSpec(message: "'async' declared here")],
+          fixIts: ["remove redundant 'await'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitAwaitAsync() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣await ℹ️async {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(
+          locationMarker: "1️⃣",
+          message: "'await' conflicts with 'async'",
+          notes: [NoteSpec(message: "'async' declared here")],
+          fixIts: ["remove redundant 'await'"]
+        )
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitNameAwait() {
+    // TODO: Fix this
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣x 2️⃣await {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot have a name", fixIts: ["remove 'x'"]),
+        DiagnosticSpec(locationMarker: "2️⃣", message: "expected async specifier; did you mean 'async'?", fixIts: ["replace 'await' with 'async'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitNameAsyncAsync() {
+    // TODO: Fix this
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣x ℹ️async 2️⃣async {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot have a name", fixIts: ["remove 'x'"]),
+        DiagnosticSpec(
+          locationMarker: "2️⃣",
+          message: "'async' conflicts with 'async'",
+          notes: [NoteSpec(message: "'async' declared here")],
+          fixIts: ["remove redundant 'async'"]
+        )
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitNameAsyncThrows() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣x async 2️⃣throws {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot have a name", fixIts: ["remove 'x'"]),
+        DiagnosticSpec(locationMarker: "2️⃣", message: "deinitializers cannot throw", fixIts: ["remove 'throws'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitParamsAsyncThrows() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit1️⃣() async 2️⃣throws {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot have parameters", fixIts: ["remove parameter clause"]),
+        DiagnosticSpec(locationMarker: "2️⃣", message: "deinitializers cannot throw", fixIts: ["remove 'throws'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitNameParamsThrowsAsync() {
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣x2️⃣() 3️⃣throws async {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot have a name", fixIts: ["remove 'x'"]),
+        DiagnosticSpec(locationMarker: "2️⃣", message: "deinitializers cannot have parameters", fixIts: ["remove parameter clause"]),
+        DiagnosticSpec(locationMarker: "3️⃣", message: "deinitializers cannot throw", fixIts: ["remove 'throws'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
+  
+  func testDeinitNameParamsAwaitThrows() {
+    // TODO: Fix this
+    assertParse(
+      """
+      class FooClassDeinitializerA {
+        deinit 1️⃣x2️⃣() 3️⃣await 4️⃣throws {}
+      }
+      """,
+      diagnostics: [
+        DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot have a name", fixIts: ["remove 'x'"]),
+        DiagnosticSpec(locationMarker: "2️⃣", message: "deinitializers cannot have parameters", fixIts: ["remove parameter clause"]),
+        DiagnosticSpec(locationMarker: "3️⃣", message: "expected async specifier; did you mean 'async'?", fixIts: ["replace 'await' with 'async'"]),
+        DiagnosticSpec(locationMarker: "4️⃣", message: "deinitializers cannot throw", fixIts: ["remove 'throws'"])
+      ],
+      fixedSource: """
+        class FooClassDeinitializerA {
+          deinit async {}
+        }
+        """
+    )
+  }
 }

@@ -825,6 +825,35 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
             handledNodes: unexpectedThrows.map(\.id)
         )
     }
+    
+    let isOfSameKind = { AsyncEffectSpecifier(token: $0) != nil }
+    if let asyncSpecifier = node.asyncKeyword {
+      let unexpectedNodes = [node.unexpectedBetweenDeinitKeywordAndAsyncKeyword, node.unexpectedBetweenAsyncKeywordAndBody]
+      for unexpected in unexpectedNodes {
+        exchangeTokens(
+          unexpected: unexpected,
+          unexpectedTokenCondition: isOfSameKind,
+          correctTokens: [asyncSpecifier],
+          message: { _ in StaticParserError.misspelledAsync },
+          moveFixIt: { ReplaceTokensFixIt(replaceTokens: $0, replacements: [asyncSpecifier]) },
+          removeRedundantFixIt: { RemoveRedundantFixIt(removeTokens: $0) }
+        )
+      }
+      
+      if asyncSpecifier.isPresent {
+        for case .some(let unexpected) in unexpectedNodes {
+          for duplicateSpecifier in unexpected.presentTokens(satisfying: isOfSameKind) {
+            addDiagnostic(
+              duplicateSpecifier,
+              DuplicateEffectSpecifiers(correctSpecifier: asyncSpecifier, unexpectedSpecifier: duplicateSpecifier),
+              notes: [Note(node: Syntax(asyncSpecifier), message: EffectSpecifierDeclaredHere(specifier: asyncSpecifier))],
+              fixIts: [FixIt(message: RemoveRedundantFixIt(removeTokens: [duplicateSpecifier]), changes: [.makeMissing(duplicateSpecifier)])],
+              handledNodes: [unexpected.id]
+            )
+          }
+        }
+      }
+    }
 
     return .visitChildren
   }

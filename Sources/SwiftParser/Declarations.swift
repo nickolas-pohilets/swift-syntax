@@ -1176,11 +1176,31 @@ extension Parser {
       if let effects = sig.effectSpecifiers {
         unexpectedBeforeAsync.append(contentsOf: effects.unexpectedBeforeAsyncSpecifier?.elements ?? [])
         asyncKeyword = sig.effectSpecifiers?.asyncSpecifier
-        unexpectedAfterAsync.append(contentsOf: effects.unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? [])
-        if let throwsKeyword = sig.effectSpecifiers?.throwsSpecifier {
+        if asyncKeyword?.isMissing ?? false {
+          unexpectedBeforeAsync.append(contentsOf: effects.unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? [])
+          if let throwsKeyword = sig.effectSpecifiers?.throwsSpecifier {
+            unexpectedBeforeAsync.append(RawSyntax(throwsKeyword))
+          }
+          for elem in effects.unexpectedAfterThrowsSpecifier?.elements ?? [] {
+            if let token = Syntax(raw: elem).as(TokenSyntax.self) {
+              if AsyncEffectSpecifier(token: token) != nil {
+                asyncKeyword = elem.as(RawTokenSyntax.self)!
+              } else {
+                if asyncKeyword?.isMissing ?? true {
+                  unexpectedBeforeAsync.append(elem)
+                } else {
+                  unexpectedAfterAsync.append(elem)
+                }
+              }
+            }
+          }
+        } else {
+          unexpectedAfterAsync.append(contentsOf: effects.unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? [])
+          if let throwsKeyword = sig.effectSpecifiers?.throwsSpecifier {
             unexpectedAfterAsync.append(RawSyntax(throwsKeyword))
+          }
+          unexpectedAfterAsync.append(contentsOf: effects.unexpectedAfterThrowsSpecifier?.elements ?? [])
         }
-        unexpectedAfterAsync.append(contentsOf: effects.unexpectedAfterThrowsSpecifier?.elements ?? [])
       }
       unexpectedAfterAsync.append(contentsOf: sig.unexpectedBetweenEffectSpecifiersAndOutput?.elements ?? [])
       if let output = sig.output {
