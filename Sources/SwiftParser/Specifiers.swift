@@ -472,50 +472,62 @@ extension RawDeinitEffectSpecifiersSyntax {
     _ unexpectedAfterThrowsSpecifier: RawUnexpectedNodesSyntax? = nil,
     arena: __shared SyntaxArena
   ) {
-    /*
-     if asyncKeyword?.isMissing ?? false {
-       unexpectedBeforeAsync.append(contentsOf: effects.unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? [])
-       if let throwsKeyword = sig.effectSpecifiers?.throwsSpecifier {
-         unexpectedBeforeAsync.append(RawSyntax(throwsKeyword))
-       }
-       for elem in effects.unexpectedAfterThrowsSpecifier?.elements ?? [] {
-         if let token = Syntax(raw: elem).as(TokenSyntax.self) {
-           if AsyncEffectSpecifier(token: token) != nil {
-             asyncKeyword = elem.as(RawTokenSyntax.self)!
-           } else {
-             if asyncKeyword?.isMissing ?? true {
-               unexpectedBeforeAsync.append(elem)
-             } else {
-               unexpectedAfterAsync.append(elem)
-             }
-           }
-         }
-       }
-     */
-    let unexpectedAfterAsync: RawUnexpectedNodesSyntax?
-    if let throwsSpecifier = throwsSpecifier, throwsSpecifier.presence == .present {
-      var unexpected: [RawSyntax] = unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? []
-      unexpected.append(throwsSpecifier.raw)
-      unexpected.append(contentsOf: unexpectedAfterThrowsSpecifier?.elements ?? [])
-      unexpectedAfterAsync = RawUnexpectedNodesSyntax(unexpected, arena: arena)
-    } else {
-      if let afterThrows = unexpectedAfterThrowsSpecifier {
-        if let beforeThrows = unexpectedBetweenAsyncSpecifierAndThrowsSpecifier {
-          unexpectedAfterAsync = RawUnexpectedNodesSyntax(beforeThrows.elements + afterThrows.elements, arena: arena)
-        } else {
-          unexpectedAfterAsync = afterThrows
-        }
-      } else {
-        unexpectedAfterAsync = unexpectedBetweenAsyncSpecifierAndThrowsSpecifier
+    // Missing async keyword was created, meaning that throws and async are swapped
+    if asyncSpecifier?.isMissing ?? false {
+      var unexpectedBeforeAsync: [RawSyntax?] = []
+      var asyncKeyword: RawTokenSyntax? = asyncSpecifier?.raw.as(RawTokenSyntax.self)
+      var unexpectedAfterAsync: [RawSyntax?] = []
+      
+      unexpectedBeforeAsync.append(contentsOf: unexpectedBeforeAsyncSpecifier?.elements ?? [])
+      unexpectedBeforeAsync.append(contentsOf: unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? [])
+      if let throwsKeyword = throwsSpecifier, !throwsKeyword.isMissing {
+        unexpectedBeforeAsync.append(RawSyntax(throwsKeyword))
       }
+      for elem in unexpectedAfterThrowsSpecifier?.elements ?? [] {
+        if let token = Syntax(raw: elem).as(TokenSyntax.self) {
+          if token.tokenKind == .keyword(.async) {
+            asyncKeyword = elem.as(RawTokenSyntax.self)
+          } else {
+            if asyncKeyword?.isMissing ?? true {
+              unexpectedBeforeAsync.append(elem)
+            } else {
+              unexpectedAfterAsync.append(elem)
+            }
+          }
+        }
+      }
+      self.init(
+        RawUnexpectedNodesSyntax(unexpectedBeforeAsync, arena: arena),
+        asyncSpecifier: asyncKeyword,
+        RawUnexpectedNodesSyntax(unexpectedAfterAsync, arena: arena),
+        arena: arena
+      )
+    } else {
+      let unexpectedAfterAsync: RawUnexpectedNodesSyntax?
+      if let throwsSpecifier = throwsSpecifier, throwsSpecifier.presence == .present {
+        var unexpected: [RawSyntax] = unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? []
+        unexpected.append(throwsSpecifier.raw)
+        unexpected.append(contentsOf: unexpectedAfterThrowsSpecifier?.elements ?? [])
+        unexpectedAfterAsync = RawUnexpectedNodesSyntax(unexpected, arena: arena)
+      } else {
+        if let afterThrows = unexpectedAfterThrowsSpecifier {
+          if let beforeThrows = unexpectedBetweenAsyncSpecifierAndThrowsSpecifier {
+            unexpectedAfterAsync = RawUnexpectedNodesSyntax(beforeThrows.elements + afterThrows.elements, arena: arena)
+          } else {
+            unexpectedAfterAsync = afterThrows
+          }
+        } else {
+          unexpectedAfterAsync = unexpectedBetweenAsyncSpecifierAndThrowsSpecifier
+        }
+      }
+      
+      self.init(
+        unexpectedBeforeAsyncSpecifier,
+        asyncSpecifier: asyncSpecifier,
+        unexpectedAfterAsync,
+        arena: arena
+      )
     }
-              
-    self.init(
-      unexpectedBeforeAsyncSpecifier,
-      asyncSpecifier: asyncSpecifier,
-      unexpectedAfterAsync,
-      arena: arena
-    )
   }
 }
 

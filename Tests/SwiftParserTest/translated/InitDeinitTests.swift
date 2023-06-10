@@ -575,7 +575,6 @@ final class InitDeinitTests: XCTestCase {
   }
   
   func testDeinitNameAwait() {
-    // TODO: Fix this
     assertParse(
       """
       class FooClassDeinitializerA {
@@ -595,7 +594,6 @@ final class InitDeinitTests: XCTestCase {
   }
   
   func testDeinitNameAsyncAsync() {
-    // TODO: Fix this
     assertParse(
       """
       class FooClassDeinitializerA {
