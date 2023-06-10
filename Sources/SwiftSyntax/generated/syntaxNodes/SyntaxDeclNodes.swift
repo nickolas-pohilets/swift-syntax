@@ -1272,9 +1272,9 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
       modifiers: ModifierListSyntax? = nil,
       _ unexpectedBetweenModifiersAndDeinitKeyword: UnexpectedNodesSyntax? = nil,
       deinitKeyword: TokenSyntax = .keyword(.deinit),
-      _ unexpectedBetweenDeinitKeywordAndAsyncKeyword: UnexpectedNodesSyntax? = nil,
-      asyncKeyword: TokenSyntax? = nil,
-      _ unexpectedBetweenAsyncKeywordAndBody: UnexpectedNodesSyntax? = nil,
+      _ unexpectedBetweenDeinitKeywordAndEffectSpecifiers: UnexpectedNodesSyntax? = nil,
+      effectSpecifiers: DeinitEffectSpecifiersSyntax? = nil,
+      _ unexpectedBetweenEffectSpecifiersAndBody: UnexpectedNodesSyntax? = nil,
       body: CodeBlockSyntax? = nil,
       _ unexpectedAfterBody: UnexpectedNodesSyntax? = nil,
       trailingTrivia: Trivia? = nil
@@ -1289,9 +1289,9 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
             modifiers, 
             unexpectedBetweenModifiersAndDeinitKeyword, 
             deinitKeyword, 
-            unexpectedBetweenDeinitKeywordAndAsyncKeyword, 
-            asyncKeyword, 
-            unexpectedBetweenAsyncKeywordAndBody, 
+            unexpectedBetweenDeinitKeywordAndEffectSpecifiers, 
+            effectSpecifiers, 
+            unexpectedBetweenEffectSpecifiersAndBody, 
             body, 
             unexpectedAfterBody
           ))) {(arena, _) in
@@ -1302,9 +1302,9 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
           modifiers?.raw, 
           unexpectedBetweenModifiersAndDeinitKeyword?.raw, 
           deinitKeyword.raw, 
-          unexpectedBetweenDeinitKeywordAndAsyncKeyword?.raw, 
-          asyncKeyword?.raw, 
-          unexpectedBetweenAsyncKeywordAndBody?.raw, 
+          unexpectedBetweenDeinitKeywordAndEffectSpecifiers?.raw, 
+          effectSpecifiers?.raw, 
+          unexpectedBetweenEffectSpecifiersAndBody?.raw, 
           body?.raw, 
           unexpectedAfterBody?.raw
         ]
@@ -1416,7 +1416,7 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
     }
   }
   
-  public var unexpectedBetweenDeinitKeywordAndAsyncKeyword: UnexpectedNodesSyntax? {
+  public var unexpectedBetweenDeinitKeywordAndEffectSpecifiers: UnexpectedNodesSyntax? {
     get {
       return data.child(at: 6, parent: Syntax(self)).map(UnexpectedNodesSyntax.init)
     }
@@ -1425,16 +1425,16 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
     }
   }
   
-  public var asyncKeyword: TokenSyntax? {
+  public var effectSpecifiers: DeinitEffectSpecifiersSyntax? {
     get {
-      return data.child(at: 7, parent: Syntax(self)).map(TokenSyntax.init)
+      return data.child(at: 7, parent: Syntax(self)).map(DeinitEffectSpecifiersSyntax.init)
     }
     set(value) {
       self = DeinitializerDeclSyntax(data.replacingChild(at: 7, with: value?.raw, arena: SyntaxArena()))
     }
   }
   
-  public var unexpectedBetweenAsyncKeywordAndBody: UnexpectedNodesSyntax? {
+  public var unexpectedBetweenEffectSpecifiersAndBody: UnexpectedNodesSyntax? {
     get {
       return data.child(at: 8, parent: Syntax(self)).map(UnexpectedNodesSyntax.init)
     }
@@ -1470,9 +1470,9 @@ public struct DeinitializerDeclSyntax: DeclSyntaxProtocol, SyntaxHashable {
           \Self.modifiers, 
           \Self.unexpectedBetweenModifiersAndDeinitKeyword, 
           \Self.deinitKeyword, 
-          \Self.unexpectedBetweenDeinitKeywordAndAsyncKeyword, 
-          \Self.asyncKeyword, 
-          \Self.unexpectedBetweenAsyncKeywordAndBody, 
+          \Self.unexpectedBetweenDeinitKeywordAndEffectSpecifiers, 
+          \Self.effectSpecifiers, 
+          \Self.unexpectedBetweenEffectSpecifiersAndBody, 
           \Self.body, 
           \Self.unexpectedAfterBody
         ])

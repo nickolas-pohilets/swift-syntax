@@ -586,8 +586,8 @@ public let DECL_NODES: [Node] = [
         documentation: "The deinit keyword."
       ),
       Child(
-        name: "AsyncKeyword",
-        kind: .token(choices: [.keyword(text: "async")]),
+        name: "EffectSpecifiers",
+        kind: .node(kind: .deinitEffectSpecifiers),
         isOptional: true
       ),
       Child(

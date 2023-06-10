@@ -124,6 +124,21 @@ public let COMMON_NODES: [Node] = [
       ),
     ]
   ),
+  
+  // deinit-effect-specifiers -> async?
+  Node(
+    kind: .deinitEffectSpecifiers,
+    base: .syntax,
+    nameForDiagnostics: "effect specifiers",
+    traits: [],
+    children: [
+      Child(
+        name: "AsyncSpecifier",
+        kind: .token(choices: [.keyword(text: "async")]),
+        isOptional: true
+      )
+    ]
+  ),
 
   Node(
     kind: .decl,

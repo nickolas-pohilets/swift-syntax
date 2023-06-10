@@ -606,7 +606,7 @@ final class InitDeinitTests: XCTestCase {
         DiagnosticSpec(locationMarker: "1️⃣", message: "deinitializers cannot have a name", fixIts: ["remove 'x'"]),
         DiagnosticSpec(
           locationMarker: "2️⃣",
-          message: "'async' conflicts with 'async'",
+          message: "'async' has already been specified",
           notes: [NoteSpec(message: "'async' declared here")],
           fixIts: ["remove redundant 'async'"]
         )

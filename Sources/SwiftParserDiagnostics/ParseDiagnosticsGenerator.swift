@@ -776,7 +776,7 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
     if shouldSkip(node) {
       return .skipChildren
     }
-    if let unexpected = node.unexpectedBetweenDeinitKeywordAndAsyncKeyword,
+    if let unexpected = node.unexpectedBetweenDeinitKeywordAndEffectSpecifiers,
       let name = unexpected.presentTokens(satisfying: { $0.tokenKind.isIdentifier == true }).only?.as(TokenSyntax.self)
     {
       addDiagnostic(
@@ -788,7 +788,7 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
         handledNodes: [name.id]
       )
     }
-    if let unexpected = node.unexpectedBetweenDeinitKeywordAndAsyncKeyword,
+    if let unexpected = node.unexpectedBetweenDeinitKeywordAndEffectSpecifiers,
       let params = unexpected.compactMap({ $0.as(ParameterClauseSyntax.self) }).only
     {
       addDiagnostic(
@@ -801,6 +801,10 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
       )
     }
     
+    return .visitChildren
+  }
+  
+  public override func visit(_ node: DeinitEffectSpecifiersSyntax) -> SyntaxVisitorContinueKind {
     let throwsTokens: [TokenKind] = [
       .keyword(.throws),
       .keyword(.rethrows),
@@ -814,7 +818,7 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
       return nil
     }
     
-    let unexpectedThrows = (node.unexpectedBetweenDeinitKeywordAndAsyncKeyword?.compactMap(asThrowingToken) ?? []) + (node.unexpectedBetweenAsyncKeywordAndBody?.compactMap(asThrowingToken) ?? [])
+    let unexpectedThrows = (node.unexpectedBeforeAsyncSpecifier?.compactMap(asThrowingToken) ?? []) + (node.unexpectedAfterAsyncSpecifier?.compactMap(asThrowingToken) ?? [])
     if let throwsKeyword = unexpectedThrows.first {
         addDiagnostic(
             throwsKeyword,
@@ -827,8 +831,8 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
     }
     
     let isOfSameKind = { AsyncEffectSpecifier(token: $0) != nil }
-    if let asyncSpecifier = node.asyncKeyword {
-      let unexpectedNodes = [node.unexpectedBetweenDeinitKeywordAndAsyncKeyword, node.unexpectedBetweenAsyncKeywordAndBody]
+    if let asyncSpecifier = node.asyncSpecifier {
+      let unexpectedNodes = [node.unexpectedBeforeAsyncSpecifier, node.unexpectedAfterAsyncSpecifier]
       for unexpected in unexpectedNodes {
         exchangeTokens(
           unexpected: unexpected,
@@ -854,7 +858,7 @@ public class ParseDiagnosticsGenerator: SyntaxAnyVisitor {
         }
       }
     }
-
+    
     return .visitChildren
   }
 

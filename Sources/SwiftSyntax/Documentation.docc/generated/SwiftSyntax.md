@@ -325,6 +325,7 @@ These articles are intended for developers wishing to contribute to SwiftSyntax
 - <doc:SwiftSyntax/DeclModifierDetailSyntax>
 - <doc:SwiftSyntax/DeclNameArgumentsSyntax>
 - <doc:SwiftSyntax/DeclNameSyntax>
+- <doc:SwiftSyntax/DeinitEffectSpecifiersSyntax>
 - <doc:SwiftSyntax/DerivativeRegistrationAttributeArgumentsSyntax>
 - <doc:SwiftSyntax/DifferentiabilityParamsClauseSyntax>
 - <doc:SwiftSyntax/DifferentiabilityParamsSyntax>

@@ -415,7 +415,108 @@ extension RawAccessorEffectSpecifiersSyntax: RawEffectSpecifiersTrait {
       }
     }
   }
+}
 
+extension RawDeinitEffectSpecifiersSyntax {
+  enum MisspelledAsyncSpecifiers: TokenSpecSet {
+    case await
+    case reasync
+
+    init?(lexeme: Lexer.Lexeme) {
+      switch PrepareForKeywordMatch(lexeme) {
+      case TokenSpec(.await, allowAtStartOfLine: false): self = .await
+      case TokenSpec(.reasync): self = .reasync
+      default: return nil
+      }
+    }
+
+    var spec: TokenSpec {
+      switch self {
+      case .await: return TokenSpec(.await, allowAtStartOfLine: false)
+      case .reasync: return .keyword(.reasync)
+      }
+    }
+  }
+  
+  enum MisspelledThrowsTokenKinds: TokenSpecSet {
+    case `try`
+    case `throw`
+    case `rethrows`
+    case `throws`
+
+    init?(lexeme: Lexer.Lexeme) {
+      switch PrepareForKeywordMatch(lexeme) {
+      case TokenSpec(.try, allowAtStartOfLine: false): self = .try
+      case TokenSpec(.throw, allowAtStartOfLine: false): self = .throw
+      case TokenSpec(.rethrows): self = .rethrows
+      case TokenSpec(.throws): self = .throws
+      default: return nil
+      }
+    }
+
+    var spec: TokenSpec {
+      switch self {
+      case .try: return TokenSpec(.try, allowAtStartOfLine: false)
+      case .throw: return TokenSpec(.throw, allowAtStartOfLine: false)
+      case .rethrows: return .keyword(.rethrows)
+      case .throws: return .keyword(.throws)
+      }
+    }
+  }
+  
+  public init(
+    _ unexpectedBeforeAsyncSpecifier: RawUnexpectedNodesSyntax? = nil,
+    asyncSpecifier: RawTokenSyntax?,
+    _ unexpectedBetweenAsyncSpecifierAndThrowsSpecifier: RawUnexpectedNodesSyntax? = nil,
+    throwsSpecifier: RawTokenSyntax?,
+    _ unexpectedAfterThrowsSpecifier: RawUnexpectedNodesSyntax? = nil,
+    arena: __shared SyntaxArena
+  ) {
+    /*
+     if asyncKeyword?.isMissing ?? false {
+       unexpectedBeforeAsync.append(contentsOf: effects.unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? [])
+       if let throwsKeyword = sig.effectSpecifiers?.throwsSpecifier {
+         unexpectedBeforeAsync.append(RawSyntax(throwsKeyword))
+       }
+       for elem in effects.unexpectedAfterThrowsSpecifier?.elements ?? [] {
+         if let token = Syntax(raw: elem).as(TokenSyntax.self) {
+           if AsyncEffectSpecifier(token: token) != nil {
+             asyncKeyword = elem.as(RawTokenSyntax.self)!
+           } else {
+             if asyncKeyword?.isMissing ?? true {
+               unexpectedBeforeAsync.append(elem)
+             } else {
+               unexpectedAfterAsync.append(elem)
+             }
+           }
+         }
+       }
+     */
+    let unexpectedAfterAsync: RawUnexpectedNodesSyntax?
+    if let throwsSpecifier = throwsSpecifier, throwsSpecifier.presence == .present {
+      var unexpected: [RawSyntax] = unexpectedBetweenAsyncSpecifierAndThrowsSpecifier?.elements ?? []
+      unexpected.append(throwsSpecifier.raw)
+      unexpected.append(contentsOf: unexpectedAfterThrowsSpecifier?.elements ?? [])
+      unexpectedAfterAsync = RawUnexpectedNodesSyntax(unexpected, arena: arena)
+    } else {
+      if let afterThrows = unexpectedAfterThrowsSpecifier {
+        if let beforeThrows = unexpectedBetweenAsyncSpecifierAndThrowsSpecifier {
+          unexpectedAfterAsync = RawUnexpectedNodesSyntax(beforeThrows.elements + afterThrows.elements, arena: arena)
+        } else {
+          unexpectedAfterAsync = afterThrows
+        }
+      } else {
+        unexpectedAfterAsync = unexpectedBetweenAsyncSpecifierAndThrowsSpecifier
+      }
+    }
+              
+    self.init(
+      unexpectedBeforeAsyncSpecifier,
+      asyncSpecifier: asyncSpecifier,
+      unexpectedAfterAsync,
+      arena: arena
+    )
+  }
 }
 
 extension TokenConsumer {
@@ -519,6 +620,61 @@ extension Parser {
 
   mutating func parseAccessorEffectSpecifiers() -> RawAccessorEffectSpecifiersSyntax? {
     return parseEffectSpecifiers(RawAccessorEffectSpecifiersSyntax.self)
+  }
+    
+  mutating func parseDeinitEffectSpecifiers() -> RawDeinitEffectSpecifiersSyntax? {
+    var unexpectedBeforeAsync: [RawSyntax?] = []
+    var asyncKeyword: RawTokenSyntax?
+    var unexpectedAfterAsync: [RawSyntax?] = []
+    
+    while true {
+      var progressed: Bool = false
+      
+      if let realAsync = self.consume(if: .keyword(.async)) {
+        progressed = true
+        if asyncKeyword?.isMissing ?? true {
+          asyncKeyword = realAsync
+        } else {
+          unexpectedAfterAsync.append(realAsync.raw)
+        }
+      }
+      
+      while let badAsync = self.consume(ifAnyIn: RawDeinitEffectSpecifiersSyntax.MisspelledAsyncSpecifiers.self) {
+        progressed = true
+        if asyncKeyword?.isMissing ?? true {
+          unexpectedBeforeAsync.append(badAsync.raw)
+        } else {
+          unexpectedAfterAsync.append(badAsync.raw)
+        }
+        if asyncKeyword == nil {
+          // Let's synthesize a missing 'async'. If we find a real async specifier
+          // later, we will replace the missing token by the present token.
+          asyncKeyword = missingToken(.keyword(.async))
+        }
+      }
+      
+      while let badThrows = self.consume(ifAnyIn: RawDeinitEffectSpecifiersSyntax.MisspelledThrowsTokenKinds.self) {
+        progressed = true
+        if asyncKeyword?.isMissing ?? true {
+          unexpectedBeforeAsync.append(badThrows.raw)
+        } else {
+          unexpectedAfterAsync.append(badThrows.raw)
+        }
+      }
+      
+      if !progressed { break }
+    }
+    
+    if unexpectedBeforeAsync.isEmpty && asyncKeyword == nil && unexpectedAfterAsync.isEmpty {
+      return nil
+    }
+
+    return RawDeinitEffectSpecifiersSyntax(
+      RawUnexpectedNodesSyntax(unexpectedBeforeAsync, arena: self.arena),
+      asyncSpecifier: asyncKeyword,
+      RawUnexpectedNodesSyntax(unexpectedAfterAsync, arena: self.arena),
+      arena: self.arena
+    )
   }
 
   /// Consume any misplaced effect specifiers and return them in as unexpected tokens.
